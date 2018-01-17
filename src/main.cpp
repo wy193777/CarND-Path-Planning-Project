@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <tuple>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
@@ -136,7 +137,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 }
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
+tuple<double, double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
 {
 	int prev_wp = -1;
 
@@ -159,8 +160,7 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 	double x = seg_x + d*cos(perp_heading);
 	double y = seg_y + d*sin(perp_heading);
 
-	return {x,y};
-
+	return make_tuple(x, y);
 }
 
 int main() {
@@ -174,9 +174,9 @@ int main() {
   vector<double> map_waypoints_dy;
 
   // Waypoint map to read from
-  string map_file_ = "../data/highway_map.csv";
+  const string map_file_ = "../data/highway_map.csv";
   // The max s value before wrapping around the track back to 0
-  double max_s = 6945.554;
+  const double max_s = 6945.554;
 
   ifstream in_map_(map_file_.c_str(), ifstream::in);
 
@@ -241,9 +241,17 @@ int main() {
 
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
-
-
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+						// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+						double dist_inc = 0.5;
+						for(int i = 0; i < 50; i++)
+						{
+							double next_s = car_s + (i + 1) * dist_inc;
+							double next_d = 6;
+							auto [next_x, next_y] = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+							next_x_vals.push_back(next_x);
+							next_y_vals.push_back(next_y);
+						}
+						// TODO: END
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
 
