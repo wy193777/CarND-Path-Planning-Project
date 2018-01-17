@@ -1,13 +1,17 @@
 # CarND-Path-Planning-Project
-Self-Driving Car Engineer Nanodegree Program
-   
-### Simulator.
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
-### Goals
+Self-Driving Car Engineer Nanodegree Program
+
+## Simulator
+
+You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
+
+## Goals
+
 In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
 
-#### The map of the highway is in data/highway_map.txt
+### The map of the highway is in data/highway_map.txt
+
 Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
 
 The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
@@ -21,7 +25,7 @@ The highway's waypoints loop around so the frenet s value, distance along the ro
 
 Here is the data provided from the Simulator to the C++ Program
 
-#### Main car's localization Data (No Noise)
+## Main car's localization Data (No Noise)
 
 ["x"] The car's x position in map coordinates
 
@@ -35,24 +39,24 @@ Here is the data provided from the Simulator to the C++ Program
 
 ["speed"] The car's speed in MPH
 
-#### Previous path data given to the Planner
+### Previous path data given to the Planner
 
 //Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
+the path has processed since last time.
 
 ["previous_path_x"] The previous list of x points previously given to the simulator
 
 ["previous_path_y"] The previous list of y points previously given to the simulator
 
-#### Previous path's end s and d values 
+### Previous path's end s and d values
 
 ["end_path_s"] The previous list's last point's frenet s value
 
 ["end_path_d"] The previous list's last point's frenet d value
 
-#### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
+### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
 
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
+["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates.
 
 ## Details
 
@@ -69,7 +73,7 @@ A really helpful resource for doing this project and creating smooth trajectorie
 ## Dependencies
 
 * cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
+* All OSes: [click here for installation instructions](https://cmake.org/install/)
 * make >= 4.1
   * Linux: make is installed by default on most Linux distros
   * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
@@ -81,8 +85,8 @@ A really helpful resource for doing this project and creating smooth trajectorie
 * [uWebSockets](https://github.com/uWebSockets/uWebSockets)
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    ```shell
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -136,5 +140,6 @@ One last note here: regardless of the IDE used, every submitted project must
 still be compilable with cmake and make./
 
 ## How to write a README
+
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
