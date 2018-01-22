@@ -6,10 +6,12 @@
 #include <thread>
 #include <vector>
 #include <tuple>
+#include <limits>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+#include "vehicle.h"
 
 using namespace std;
 
@@ -165,6 +167,53 @@ tuple<double, double> getXY(double s, double d, const vector<double> &maps_s, co
 	return make_tuple(x, y);
 }
 
+int dToLaneNumber(double d)
+{
+	return ((int) d) / 4; 
+}
+
+int laneNumberToD(int lane)
+{
+	return (2 + 4 * lane);
+}
+
+Vehicle createVehicle(vector<double> sensor_data)
+{
+	double x_pos = sensor_data[1];
+	double y_pos = sensor_data[2];
+	double vx = sensor_data[3];
+	double vy = sensor_data[4];
+	double s = sensor_data[5];
+	float d = sensor_data[6];
+	double velocity = sqrt(vx * vx + vy * vy);
+	int lane = 0;
+	return Vehicle(dToLaneNumber(d), s, velocity, 0);
+}
+
+
+
+bool inSameLane(double other_d, double our_lane)
+{
+	return (other_d < (2 + 4 * our_lane + 2) && other_d > (2 + 4 * our_lane - 2));
+}
+
+float inefficiency_cost(int target_speed, int intended_lane, int final_lane, vector<int> lane_speeds)
+{
+	/*
+    Cost becomes higher for trajectories with intended lane and final lane that have traffic slower than target_speed.
+    */
+
+	float speed_intended = lane_speeds[intended_lane];
+	float speed_final = lane_speeds[final_lane];
+	float cost = (2.0 * target_speed - speed_intended - speed_final) / target_speed;
+	return cost;
+}
+
+double roadVelocity(double vx, double vy)
+{
+	return sqrt(vx * vx + vy * vy);
+}
+
 int main()
 {
 	uWS::Hub h;
@@ -180,14 +229,16 @@ int main()
 	const string map_file_ = "../data/highway_map.csv";
 	// The max s value before wrapping around the track back to 0
 	const double max_s = 6945.554;
+	const double target_speed = 49;
+	const double max_acceleration = 10;
 
 	ifstream in_map_(map_file_.c_str(), ifstream::in);
 
 	string line;
 	while (getline(in_map_, line))
 	{
-		istringstream iss(line);
 		double x;
+		istringstream iss(line);
 		double y;
 		float s;
 		float d_x;
@@ -206,8 +257,9 @@ int main()
 
 	int lane = 1;
 	double ref_vel = 0;
-
-	h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, &map_waypoints_dx, &map_waypoints_dy, &lane, &ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+	Vehicle self = Vehicle(1, 0, 0, 0);
+	self.configure(target_speed, 3, max_s, 1, max_acceleration);
+	h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, &map_waypoints_dx, &map_waypoints_dy, &lane, &ref_vel, &self](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
 																															  uWS::OpCode opCode) {
 		// "42" at the start of the message means there's a websocket message event.
 		// The 4 signifies a websocket message
@@ -230,6 +282,8 @@ int main()
 		string event = j[0].get<string>();
 		if (event != "telemetry")
 			return;
+		/**************************************************************************************/
+		// real automate
 		// j[1] is the data JSON object
 
 		// Main car's localization Data
@@ -257,36 +311,34 @@ int main()
 		}
 
 		bool too_close = false;
-
+		/*********************************************************************************/
 		for (int i = 0; i < sensor_fusion.size(); i++)
 		{
 			float d = sensor_fusion[i][6];
-			if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2))
-			{
-				double vx = sensor_fusion[i][3];
-				double vy = sensor_fusion[i][4];
-				double check_speed = sqrt(vx * vx + vy * vy);
-				double check_car_s = sensor_fusion[i][5];
-				// where the car should be in the near future
-				check_car_s += ((double)prev_size * 0.02 * check_speed);
+			if (!inSameLane(d, lane))
+				continue;
 
-				if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
+			double vx = sensor_fusion[i][3];
+			double vy = sensor_fusion[i][4];
+			double check_speed = sqrt(vx * vx + vy * vy);
+			double check_car_s = sensor_fusion[i][5];
+			// where the car should be in the near future
+			check_car_s += ((double)prev_size * 0.02 * check_speed);
+
+			if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
+			{
+				too_close = true;
+				if (lane > 0)
 				{
-					// some logic
-					// ref_vel = check_speed; // reduce speed when close
-					too_close = true;
-					if (lane > 0)
-					{
-						lane = lane - 1;
-					}
-					else
-					{
-						lane = lane + 1;
-					}
+					lane = lane - 1;
+				}
+				else
+				{
+					lane = lane + 1;
 				}
 			}
 		}
-
+		/***********************************************************************************/
 		if (too_close)
 		{
 			ref_vel -= 0.25; // about 5 meters per second^2
@@ -334,7 +386,15 @@ int main()
 		vector<tuple<double, double>> next_wps;
 		for (int i = 0; i < 3; i++)
 		{
-			next_wps.push_back(getXY(car_s + (i + 1) * 30, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_y));
+			next_wps.push_back(
+				getXY(
+					car_s + (i + 1) * 30, 
+					(2 + 4 * lane), 
+					map_waypoints_s, 
+					map_waypoints_x, 
+					map_waypoints_y
+				)
+			);
 		}
 
 		double next_xxx[] = {get<0>(next_wps[0]), get<0>(next_wps[1]), get<0>(next_wps[2])};
