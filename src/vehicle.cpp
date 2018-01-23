@@ -214,11 +214,11 @@ vector<Vehicle> Vehicle::lane_change_trajectory(string state, map<int, vector<Ve
     return trajectory;
 }
 
-void Vehicle::increment(int dt = 1) {
+void Vehicle::increment(double dt = 1) {
 	this->s = position_at(dt);
 }
 
-float Vehicle::position_at(int t) {
+double Vehicle::position_at(double t) {
     return this->s + this->velocity*t + this->acceleration*t*t/2.0;
 }
 
@@ -288,6 +288,13 @@ void Vehicle::realize_next_state(vector<Vehicle> trajectory) {
     this->s = next_state.s;
     this->velocity = next_state.velocity;
     this->acceleration = next_state.acceleration;
+}
+
+void Vehicle::update(int lane, float s, float velocity, float acceleration) {
+    this->lane = lane;
+    this->s = s;
+    this->velocity = velocity;
+    this->acceleration = acceleration;
 }
 
 void Vehicle::configure(

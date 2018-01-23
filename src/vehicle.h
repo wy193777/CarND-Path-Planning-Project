@@ -70,9 +70,9 @@ public:
 
   vector<Vehicle> prep_lane_change_trajectory(string state, map<int, vector<Vehicle>> predictions);
 
-  void increment(int dt);
+  void increment(double dt);
 
-  float position_at(int t);
+  double position_at(double t);
 
   bool get_vehicle_behind(map<int, vector<Vehicle>> predictions, int lane, Vehicle & rVehicle);
 
@@ -81,6 +81,8 @@ public:
   vector<Vehicle> generate_predictions(int horizon=2);
 
   void realize_next_state(vector<Vehicle> trajectory);
+
+  void update(int lane, float s, float velocity, float acceleration);
 
   void configure(
     double target_speed,

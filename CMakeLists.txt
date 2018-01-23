@@ -2,22 +2,24 @@ project(Path_Planning)
 
 cmake_minimum_required (VERSION 3.5)
 
-add_definitions(-std=c++11)
+add_definitions(-std=c++1z)
 
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
-set(sources src/main.cpp)
+set(sources src/main.cpp src/cost.cpp src/vehicle.cpp)
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
+add_library(Vehicle vehicle.cpp)
+
 include_directories(/usr/local/include)
 include_directories(/usr/local/opt/openssl/include)
+
 link_directories(/usr/local/lib)
 link_directories(/usr/local/opt/openssl/lib)
 link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
-
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
 

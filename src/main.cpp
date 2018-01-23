@@ -7,6 +7,7 @@
 #include <vector>
 #include <tuple>
 #include <limits>
+#include <map>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
@@ -259,7 +260,12 @@ int main()
 	double ref_vel = 0;
 	Vehicle self = Vehicle(1, 0, 0, 0);
 	self.configure(target_speed, 3, max_s, 1, max_acceleration);
-	h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, &map_waypoints_dx, &map_waypoints_dy, &lane, &ref_vel, &self](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+	map<int, vector<Vehicle>> predictions;
+	h.onMessage(
+		[
+			&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, 
+			&map_waypoints_dx, &map_waypoints_dy, &self, &predictions
+		](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
 																															  uWS::OpCode opCode) {
 		// "42" at the start of the message means there's a websocket message event.
 		// The 4 signifies a websocket message
@@ -293,7 +299,7 @@ int main()
 		double car_d = j[1]["d"];
 		double car_yaw = j[1]["yaw"];
 		double car_speed = j[1]["speed"];
-
+		self.update(dToLaneNumber(car_d), car_s, car_speed, 0);
 		// Previous path data given to the Planner
 		vector<double> previous_path_x = j[1]["previous_path_x"];
 		vector<double> previous_path_y = j[1]["previous_path_y"];
@@ -311,43 +317,18 @@ int main()
 		}
 
 		bool too_close = false;
-		/*********************************************************************************/
+		map<int, Vehicle> vehicles;
+		//********************************************************************************
 		for (int i = 0; i < sensor_fusion.size(); i++)
 		{
-			float d = sensor_fusion[i][6];
-			if (!inSameLane(d, lane))
-				continue;
-
-			double vx = sensor_fusion[i][3];
-			double vy = sensor_fusion[i][4];
-			double check_speed = sqrt(vx * vx + vy * vy);
-			double check_car_s = sensor_fusion[i][5];
-			// where the car should be in the near future
-			check_car_s += ((double)prev_size * 0.02 * check_speed);
-
-			if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
-			{
-				too_close = true;
-				if (lane > 0)
-				{
-					lane = lane - 1;
-				}
-				else
-				{
-					lane = lane + 1;
-				}
-			}
+			vehicles[sensor_fusion[i][0]] = createVehicle(sensor_fusion[i]);
 		}
-		/***********************************************************************************/
-		if (too_close)
+		for (auto &[key, val] : vehicles)
 		{
-			ref_vel -= 0.25; // about 5 meters per second^2
+			predictions[key] = val.generate_predictions();
 		}
-		else if (ref_vel < 49.5)
-		{
-			ref_vel += 0.5;
-		}
-
+		vector<Vehicle> trajectory = self.choose_next_state(predictions);
+		//**********************************************************************************
 		vector<double> ptsx;
 		vector<double> ptsy;
 
@@ -355,53 +336,24 @@ int main()
 		double ref_y = car_y;
 		double ref_yaw = deg2rad(car_yaw);
 
-		// if previous size is almost empty, use the car as starting reference
-		if (prev_size < 2)
-		{
-			double prev_car_x = car_x - cos(car_yaw);
-			double prev_car_y = car_y - sin(car_yaw);
-
-			double to_x[] = {prev_car_x, car_x};
-			ptsx.insert(ptsx.end(), to_x, end(to_x));
-
-			double to_y[] = {prev_car_y, car_y};
-			ptsy.insert(ptsy.end(), to_y, end(to_y));
-		}
-		else // use the previous path's end point as starting reference
-		{
-			ref_x = previous_path_x[prev_size - 1];
-			ref_y = previous_path_y[prev_size - 1];
-
-			double ref_x_prev = previous_path_x[prev_size - 2];
-			double ref_y_prev = previous_path_y[prev_size - 2];
-			ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-
-			double to_x[] = {ref_x_prev, ref_x};
-			ptsx.insert(ptsx.end(), to_x, end(to_x));
-
-			double to_y[] = {ref_y_prev, ref_y};
-			ptsy.insert(ptsy.end(), to_y, end(to_y));
-		}
-
 		vector<tuple<double, double>> next_wps;
-		for (int i = 0; i < 3; i++)
+		for (auto vehicle : trajectory)
 		{
 			next_wps.push_back(
 				getXY(
-					car_s + (i + 1) * 30, 
-					(2 + 4 * lane), 
-					map_waypoints_s, 
-					map_waypoints_x, 
+					vehicle.s,
+					2 + 4 * vehicle.lane,
+					map_waypoints_s,
+					map_waypoints_x,
 					map_waypoints_y
 				)
 			);
 		}
 
-		double next_xxx[] = {get<0>(next_wps[0]), get<0>(next_wps[1]), get<0>(next_wps[2])};
-		double next_yyy[] = {get<1>(next_wps[0]), get<1>(next_wps[1]), get<1>(next_wps[2])};
-
-		ptsx.insert(ptsx.end(), next_xxx, end(next_xxx));
-		ptsy.insert(ptsy.end(), next_yyy, end(next_yyy));
+		for(auto xy : next_wps) {
+			ptsx.push_back(get<0>(xy));
+			ptsy.push_back(get<1>(xy));
+		}
 
 		// shift car reference angle to 0 degree
 		for (int i = 0; i < ptsx.size(); i++)
@@ -435,7 +387,7 @@ int main()
 
 		for (int i = 0; i < 50 - previous_path_x.size(); i++)
 		{
-			double N = target_dist / (0.02 * ref_vel / 2.24);
+			double N = target_dist / (0.02 * self.velocity / 2.24);
 			double x_point = x_add_on + (target_x / N);
 			double y_point = s(x_point);
 
