@@ -239,7 +239,7 @@ int main()
 		double car_d = j[1]["d"];
 		double car_yaw = j[1]["yaw"];
 		double car_speed = j[1]["speed"];
-
+		cout << "<" << car_s <<", " << car_d << ">" << endl;
 		// Previous path data given to the Planner
 		vector<double> previous_path_x = j[1]["previous_path_x"];
 		vector<double> previous_path_y = j[1]["previous_path_y"];
@@ -334,6 +334,7 @@ int main()
 		vector<tuple<double, double>> next_wps;
 		for (int i = 0; i < 3; i++)
 		{
+			cout << "(" << car_s + (i + 1) * 30 << ", " << (2 + 4 * lane) << ")" << endl;
 			next_wps.push_back(getXY(car_s + (i + 1) * 30, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_y));
 		}
 
