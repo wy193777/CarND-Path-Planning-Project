@@ -340,7 +340,7 @@ int main()
 		vector<tuple<double, double>> next_wps;
 		for (auto vehicle : trajectory)
 		{
-			cout<<"<" << vehicle.s <<", "<< vehicle.lane << ">" << endl;
+			cout<<"<" << vehicle.s <<", "<< 2 + 4 * vehicle.lane << ", " << vehicle.state << ">" << endl;
 			next_wps.push_back(
 				getXY(
 					vehicle.s,
@@ -363,10 +363,11 @@ int main()
 			// shift car reference angle to 0 degrees
 			double shift_x = ptsx[i] - ref_x;
 			double shift_y = ptsy[i] - ref_y;
-			// printf("<%f, %f> \n", shift_x, shift_y);
-
-			ptsx[i] = (shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw));
-			ptsy[i] = (shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw));
+			double center_coo_x = (shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw));
+			double center_coo_y = (shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw));
+			printf("<%f, %f> \n", center_coo_x, center_coo_y);
+			ptsx[i] = center_coo_x;
+			ptsy[i] = center_coo_y;
 		}
 		printf("ptsx size %d\n", ptsx.size());
 		tk::spline s;
