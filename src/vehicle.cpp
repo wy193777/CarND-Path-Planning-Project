@@ -153,8 +153,11 @@ vector<float> Vehicle::get_kinematics(map<int, vector<Vehicle>> predictions, int
         new_velocity = min(max_velocity_accel_limit, this->target_speed);
     }
 
-    new_accel = new_velocity - this->velocity; //Equation: (v_1 - v_0)/t = acceleration
-    new_position = this->s + new_velocity + new_accel / 2.0;
+    // new_accel = new_velocity - this->velocity; //Equation: (v_1 - v_0)/t = acceleration
+    // new_position = this->s + new_velocity + new_accel / 2.0;
+    new_velocity = abs(new_velocity);
+    new_position = this->s + new_velocity;
+    cout<<"new v: "<< new_velocity<<endl;
     return {new_position, new_velocity, new_accel};
 }
 
@@ -184,7 +187,7 @@ vector<Vehicle> Vehicle::keep_lane_trajectory(map<int, vector<Vehicle>> predicti
     float new_s = kinematics[0];
     float new_v = kinematics[1];
     float new_a = kinematics[2];
-    trajectory.push_back(Vehicle(this->lane, new_s, new_v, new_a, "KL"));
+    trajectory.push_back(Vehicle(this->lane, new_s + 1, new_v, new_a, "KL"));
     trajectory.push_back(Vehicle(this->lane, new_s + 30, new_v, new_a, "KL"));
     return trajectory;
 }

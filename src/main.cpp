@@ -358,6 +358,7 @@ int main()
 		}
 
 		// shift car reference angle to 0 degree
+		cout << "yaw: " << ref_yaw << endl; 
 		for (int i = 0; i < ptsx.size(); i++)
 		{
 			// shift car reference angle to 0 degrees
@@ -369,7 +370,7 @@ int main()
 			ptsx[i] = center_coo_x;
 			ptsy[i] = center_coo_y;
 		}
-		printf("ptsx size %d\n", ptsx.size());
+		// printf("ptsx size %d\n", ptsx.size());
 		tk::spline s;
 
 		s.set_points(ptsx, ptsy);
@@ -392,6 +393,7 @@ int main()
 		for (int i = 0; i < 50 - previous_path_x.size(); i++)
 		{
 			double N = target_dist / (0.02 * self.velocity / 2.24);
+			// double N = target_dist / (0.02 * 30 / 2.24);
 			double x_point = x_add_on + (target_x / N);
 			double y_point = s(x_point);
 
@@ -418,6 +420,7 @@ int main()
 
 		//this_thread::sleep_for(chrono::milliseconds(1000));
 		ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+		cout << endl;
 	});
 
 	// We don't need this since we're not using HTTP but if it's removed the
