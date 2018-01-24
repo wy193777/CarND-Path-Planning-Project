@@ -78,7 +78,7 @@ public:
 
   bool get_vehicle_ahead(map<int, vector<Vehicle>> predictions, int lane, Vehicle & rVehicle);
 
-  vector<Vehicle> generate_predictions(int horizon=2);
+  vector<Vehicle> generate_predictions(int horizon=4);
 
   void realize_next_state(vector<Vehicle> trajectory);
 

@@ -297,6 +297,7 @@ int main()
 		double car_y = j[1]["y"];
 		double car_s = j[1]["s"];
 		double car_d = j[1]["d"];
+		cout << "<" << car_s <<"," << car_d << ">" << endl;
 		double car_yaw = j[1]["yaw"];
 		double car_speed = j[1]["speed"];
 		self.update(dToLaneNumber(car_d), car_s, car_speed, 0);
@@ -339,6 +340,7 @@ int main()
 		vector<tuple<double, double>> next_wps;
 		for (auto vehicle : trajectory)
 		{
+			cout<<"<" << vehicle.s <<", "<< vehicle.lane << ">" << endl;
 			next_wps.push_back(
 				getXY(
 					vehicle.s,
@@ -361,11 +363,12 @@ int main()
 			// shift car reference angle to 0 degrees
 			double shift_x = ptsx[i] - ref_x;
 			double shift_y = ptsy[i] - ref_y;
+			// printf("<%f, %f> \n", shift_x, shift_y);
 
 			ptsx[i] = (shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw));
 			ptsy[i] = (shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw));
 		}
-
+		printf("ptsx size %d\n", ptsx.size());
 		tk::spline s;
 
 		s.set_points(ptsx, ptsy);
