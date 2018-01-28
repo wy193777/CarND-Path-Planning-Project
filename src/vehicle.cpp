@@ -1,15 +1,15 @@
 #include <algorithm>
 #include <iostream>
+#include "cost.h"
 #include "vehicle.h"
 #include <cmath>
 #include <map>
 #include <string>
 #include <iterator>
-#include "cost.h"
-
 /**
  * Initializes Vehicle
  */
+using namespace Cost;
 
 Vehicle::Vehicle() {}
 

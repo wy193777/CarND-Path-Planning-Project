@@ -17,45 +17,6 @@ will be very useful in your implementation of the cost functions below. Please s
 for details on how the helper data is computed. 
 */
 
-
-float goal_distance_cost(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions, map<string, float> & data) {
-    /*
-    Cost increases based on distance of intended lane (for planning a lane change) and final lane of trajectory.
-    Cost of being out of goal lane also becomes larger as vehicle approaches goal distance. This function is
-    very similar to what you have already implemented in the "Implement a Cost Function in C++" quiz.
-    */
-    float cost;
-    float distance = data["distance_to_goal"];
-    if (distance > 0) {
-        cost = 1 - 2*exp(-(abs(2.0*vehicle.goal_lane - data["intended_lane"] - data["final_lane"]) / distance));
-    } else {
-        cost = 1;
-    }
-    return cost;
-}
-
-float inefficiency_cost(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions, map<string, float> & data) {
-    /*
-    Cost becomes higher for trajectories with intended lane and final lane that have traffic slower than vehicle's target speed. 
-    You can use the lane_speed(const map<int, vector<Vehicle>> & predictions, int lane) function to determine the speed
-    for a lane. This function is very similar to what you have already implemented in the "Implement a Second Cost Function in C++" quiz.
-    */
-    float proposed_speed_intended = Cost::lane_speed(predictions, data["intended_lane"]);
-    //If no vehicle is in the proposed lane, we can travel at target speed.
-    if (proposed_speed_intended < 0) {
-        proposed_speed_intended = vehicle.target_speed;
-    }
-
-    float proposed_speed_final = Cost::lane_speed(predictions, data["final_lane"]);
-    if (proposed_speed_final < 0) {
-        proposed_speed_final = vehicle.target_speed;
-    }
-    
-    float cost = (2.0*vehicle.target_speed - proposed_speed_intended - proposed_speed_final)/vehicle.target_speed;
-
-    return cost;
-}
-
 float lane_speed(const vector<Vehicle> & predictions, int lane) {
     /*
     All non ego vehicles in a lane have the same speed, so to get the speed limit for a lane,
@@ -68,22 +29,6 @@ float lane_speed(const vector<Vehicle> & predictions, int lane) {
         }
     }
     return -1.0;
-}
-
-float calculate_cost(const Vehicle & vehicle, vector<Vehicle> & predictions, const vector<Vehicle> & trajectory) {
-    /*
-    Sum weighted cost functions to get total cost for trajectory.
-    */
-    map<string, float> trajectory_data = Cost::get_helper_data(vehicle, trajectory, predictions);
-    float cost = 0.0;
-
-    //Add additional cost functions here.
-    
-    float goal_cost = REACH_GOAL * Cost::goal_distance_cost(vehicle, trajectory, predictions, trajectory_data);
-    float efficiency_cost = EFFICIENCY * Cost::inefficiency_cost(vehicle, trajectory, predictions, trajectory_data);
-
-    return goal_cost + efficiency_cost;
-
 }
 
 map<string, float> get_helper_data(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions) {
@@ -115,4 +60,62 @@ map<string, float> get_helper_data(const Vehicle & vehicle, const vector<Vehicle
     trajectory_data["distance_to_goal"] = distance_to_goal;
     return trajectory_data;
 }
+
+float goal_distance_cost(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions, map<string, float> & data) {
+    /*
+    Cost increases based on distance of intended lane (for planning a lane change) and final lane of trajectory.
+    Cost of being out of goal lane also becomes larger as vehicle approaches goal distance. This function is
+    very similar to what you have already implemented in the "Implement a Cost Function in C++" quiz.
+    */
+    float cost;
+    float distance = data["distance_to_goal"];
+    if (distance > 0) {
+        cost = 1 - 2*exp(-(abs(2.0*vehicle.goal_lane - data["intended_lane"] - data["final_lane"]) / distance));
+    } else {
+        cost = 1;
+    }
+    return cost;
+}
+
+float inefficiency_cost(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions, map<string, float> & data) {
+    /*
+    Cost becomes higher for trajectories with intended lane and final lane that have traffic slower than vehicle's target speed. 
+    You can use the lane_speed(const map<int, vector<Vehicle>> & predictions, int lane) function to determine the speed
+    for a lane. This function is very similar to what you have already implemented in the "Implement a Second Cost Function in C++" quiz.
+    */
+    float proposed_speed_intended = lane_speed(predictions, data["intended_lane"]);
+    //If no vehicle is in the proposed lane, we can travel at target speed.
+    if (proposed_speed_intended < 0) {
+        proposed_speed_intended = vehicle.target_speed;
+    }
+
+    float proposed_speed_final = lane_speed(predictions, data["final_lane"]);
+    if (proposed_speed_final < 0) {
+        proposed_speed_final = vehicle.target_speed;
+    }
+    
+    float cost = (2.0*vehicle.target_speed - proposed_speed_intended - proposed_speed_final)/vehicle.target_speed;
+
+    return cost;
+}
+
+
+
+float calculate_cost(const Vehicle & vehicle, vector<Vehicle> & predictions, const vector<Vehicle> & trajectory) {
+    /*
+    Sum weighted cost functions to get total cost for trajectory.
+    */
+    map<string, float> trajectory_data = get_helper_data(vehicle, trajectory, predictions);
+    float cost = 0.0;
+
+    //Add additional cost functions here.
+    
+    float goal_cost = REACH_GOAL * goal_distance_cost(vehicle, trajectory, predictions, trajectory_data);
+    float efficiency_cost = EFFICIENCY * inefficiency_cost(vehicle, trajectory, predictions, trajectory_data);
+
+    return goal_cost + efficiency_cost;
+
+}
+
+
 

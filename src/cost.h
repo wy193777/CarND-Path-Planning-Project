@@ -29,4 +29,5 @@ map<string, float> get_helper_data(
     const vector<Vehicle> &trajectory,
     const vector<Vehicle> &predictions);
 }
+
 #endif
