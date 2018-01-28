@@ -84,7 +84,7 @@ public:
 
   void realize_next_state(vector<Vehicle> trajectory);
 
-  void update(int lane, float s, float velocity, float acceleration);
+  void update(int lane, float s, float velocity, int future_steps);
 
   void configure(
     double target_speed,

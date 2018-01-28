@@ -175,55 +175,6 @@ int laneNumberToD(int lane)
 {
 	return (2 + 4 * lane);
 }
-/**
- *  
- */
-tuple<double, int> process_sensor_fusion(
-	vector<vector<double>> sensor_fusion, double car_s, 
-	double car_v, int car_lane, int future_steps)
-{
-	bool too_close = false;
-	int new_lane = 1;
-	double new_velocity = car_v;
-	for (int i = 0; i < sensor_fusion.size(); i++)
-	{
-		float d = sensor_fusion[i][6];
-		if (dToLaneNumber(d) == car_lane)
-		{
-			double vx = sensor_fusion[i][3];
-			double vy = sensor_fusion[i][4];
-			double check_speed = sqrt(vx * vx + vy * vy);
-			double check_car_s = sensor_fusion[i][5];
-			// where the car should be in the near future
-			check_car_s += ((double)future_steps * 0.02 * check_speed);
-
-			if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
-			{
-				// some logic
-				// ref_vel = check_speed; // reduce speed when close
-				too_close = true;
-				if (car_lane > 0)
-				{
-					new_lane = car_lane - 1;
-				}
-				else
-				{
-					new_lane = car_lane + 1;
-				}
-			}
-		}
-	}
-	if (too_close)
-	{
-		car_v -= 0.25; // about 5 meters per second^2
-	}
-	else if (car_v < 49.5)
-	{
-		car_v += 0.5;
-	}
-	new_velocity = car_v;
-	return make_tuple(new_velocity, new_lane);
-}
 
 Vehicle createVehicle(vector<double> sensor_data)
 {
@@ -239,7 +190,75 @@ Vehicle createVehicle(vector<double> sensor_data)
 	return Vehicle(id, dToLaneNumber(d), s, velocity, 0);
 }
 
+map<int, Vehicle> createVehicles(vector<vector<double>> sensor_fusion)
+{
+	map<int, Vehicle> surroundings;
+	for (auto data : sensor_fusion) 
+	{
+		surroundings[data[0]] = createVehicle(data);
+	}
+	return surroundings;
+}
+/**
+ *  
+ */
+tuple<double, int> process_sensor_fusion(
+	vector<vector<double>> sensor_fusion,
+	map<int, Vehicle> & surroundings,
+	Vehicle self,
+	double car_s, 
+	double car_v, 
+	int car_lane, 
+	int future_steps)
+{
+	self.update(car_lane, car_s, car_v, future_steps);
+	vector<Vehicle> predictions;
+	for (auto data : sensor_fusion) {
+		Vehicle prediction = surroundings[data[0]].generate_predictions(future_steps, data);
+		predictions.push_back(prediction);
+		surroundings[data[0]] = prediction;
+	}
+	vector<Vehicle> trajectory = self.choose_next_state(predictions);
+	// for (int i = 0; i < sensor_fusion.size(); i++)
+	// {
+	// 	float d = sensor_fusion[i][6];
+	// 	if (dToLaneNumber(d) == car_lane)
+	// 	{
+	// 		double vx = sensor_fusion[i][3];
+	// 		double vy = sensor_fusion[i][4];
+	// 		double check_speed = sqrt(vx * vx + vy * vy);
+	// 		double check_car_s = sensor_fusion[i][5];
+	// 		// where the car should be in the near future
+	// 		check_car_s += ((double)future_steps * 0.02 * check_speed);
 
+	// 		if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
+	// 		{
+	// 			// some logic
+	// 			// ref_vel = check_speed; // reduce speed when close
+	// 			too_close = true;
+	// 			if (car_lane > 0)
+	// 			{
+	// 				new_lane = car_lane - 1;
+	// 			}
+	// 			else
+	// 			{
+	// 				new_lane = car_lane + 1;
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if (too_close)
+	// {
+	// 	car_v -= 0.25; // about 5 meters per second^2
+	// }
+	// else if (car_v < 49.5)
+	// {
+	// 	car_v += 0.5;
+	// }
+	double new_velocity = trajectory[1].velocity;
+	double new_lane = trajectory[1].lane; 
+	return make_tuple(new_velocity, new_lane);
+}
 
 bool inSameLane(double other_d, double our_lane)
 {
@@ -304,9 +323,21 @@ int main()
 
 	int lane = 1;
 	double ref_vel = 0;
-
-	h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, &map_waypoints_dx, &map_waypoints_dy, &lane, &ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-																															  uWS::OpCode opCode) {
+	map<int, Vehicle> surroundings;
+	Vehicle self = Vehicle(-1, lane, 0, 0, 0, "KL");
+	self.configure(49.5, 3, 7000, 1, 9.5);
+	
+	h.onMessage([
+		&map_waypoints_x, 
+		&map_waypoints_y, 
+		&map_waypoints_s, 
+		&map_waypoints_dx, 
+		&map_waypoints_dy, 
+		&lane, 
+		&ref_vel,
+		&surroundings,
+		&self
+	](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,  uWS::OpCode opCode) {
 		// "42" at the start of the message means there's a websocket message event.
 		// The 4 signifies a websocket message
 		// The 2 signifies a websocket event
@@ -356,8 +387,15 @@ int main()
 
 		bool too_close = false;
 
+		if (surroundings.empty()) {
+			surroundings = createVehicles(sensor_fusion);
+		}
+
 		auto [new_speed, new_lane] = process_sensor_fusion(
-			sensor_fusion, car_s, ref_vel, lane, prev_size);
+			sensor_fusion, 
+			surroundings, 
+			self, 
+			car_s, ref_vel, lane, prev_size);
 		
 		ref_vel = new_speed;
 		lane = new_lane;

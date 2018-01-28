@@ -21,7 +21,7 @@ Vehicle::Vehicle(int id, int lane, float s, float velocity, float acceleration, 
     this->velocity = velocity;
     this->acceleration = acceleration;
     this->state = state;
-    max_acceleration = -1;
+    max_acceleration = 10;
 }
 
 Vehicle::~Vehicle() {}
@@ -45,9 +45,9 @@ vector<Vehicle> Vehicle::choose_next_state(vector<Vehicle> predictions)
     vector<string> final_states;
     vector<vector<Vehicle>> final_trajectories;
 
-    for (vector<string>::iterator it = states.begin(); it != states.end(); ++it)
+    for (string state : states)
     {
-        vector<Vehicle> trajectory = generate_trajectory(*it, predictions);
+        vector<Vehicle> trajectory = generate_trajectory(state, predictions);
         if (trajectory.size() != 0)
         {
             cost = calculate_cost(*this, predictions, trajectory);
@@ -153,9 +153,9 @@ vector<float> Vehicle::get_kinematics(vector<Vehicle> predictions, int lane)
         new_velocity = min(max_velocity_accel_limit, this->target_speed);
     }
 
-    // new_accel = new_velocity - this->velocity; //Equation: (v_1 - v_0)/t = acceleration
-    // new_position = this->s + new_velocity + new_accel / 2.0;
-    new_velocity = abs(new_velocity);
+    new_accel = new_velocity - this->velocity; //Equation: (v_1 - v_0)/t = acceleration
+    new_position = this->s + new_velocity + new_accel / 2.0;
+    // new_velocity = abs(new_velocity);
     new_position = this->s + new_velocity;
     cout<<"new v: "<< new_velocity<<endl;
     return {new_position, new_velocity, new_accel};
@@ -170,8 +170,8 @@ vector<Vehicle> Vehicle::constant_speed_trajectory()
     float next_pos = position_at(1);
     vector<Vehicle> trajectory = {
         Vehicle(this->id, this->lane, this->s, this->velocity, this->acceleration, this->state),
-        Vehicle(this->id, this->lane, next_pos, this->velocity, 0, this->state),
-        Vehicle(this->id, this->lane, position_at(2), this->velocity, 0, this->state)};
+        Vehicle(this->id, this->lane, next_pos, this->velocity, 0, this->state)
+    };
     return trajectory;
 }
 
@@ -188,7 +188,6 @@ vector<Vehicle> Vehicle::keep_lane_trajectory(vector<Vehicle> predictions)
     float new_v = kinematics[1];
     float new_a = kinematics[2];
     trajectory.push_back(Vehicle(this->id, this->lane, new_s + 1, new_v, new_a, "KL"));
-    trajectory.push_back(Vehicle(this->id, this->lane, new_s + 30, new_v, new_a, "KL"));
     return trajectory;
 }
 
@@ -321,10 +320,11 @@ Vehicle Vehicle::generate_predictions(int future_steps, vector<double> sensor_da
     double vx = sensor_data[3];
     double vy = sensor_data[4];
     double curr_velocity = sqrt(vx * vx + vy * vy);
-    double curr_s = sensor_data[5]; 
-    double new_s = curr_s + future_steps * 0.02 * curr_velocity;
-    double new_acc = (this->velocity - curr_velocity) / (future_steps * 0.02);
-    double new_velocity = curr_velocity + new_acc * future_steps * 0.02;
+    double curr_s = sensor_data[5];
+    double future_time = future_steps * 0.02;
+    double new_acc = (this->velocity - curr_velocity) / future_time;
+    double new_s = curr_s + future_time * curr_velocity + 0.5 * new_acc * future_time * future_time;
+    double new_velocity = curr_velocity + new_acc * future_time;
     return Vehicle(this->id, this->lane, new_s, new_velocity, new_acc, this-> state);
 }
 
@@ -341,12 +341,12 @@ void Vehicle::realize_next_state(vector<Vehicle> trajectory)
     this->acceleration = next_state.acceleration;
 }
 
-void Vehicle::update(int lane, float s, float velocity, float acceleration)
+void Vehicle::update(int lane, float s, float velocity, int future_steps)
 {
     this->lane = lane;
     this->s = s;
+    this->acceleration = (velocity - this->velocity) / (future_steps * 0.02);
     this->velocity = velocity;
-    this->acceleration = acceleration;
 }
 
 void Vehicle::configure(
