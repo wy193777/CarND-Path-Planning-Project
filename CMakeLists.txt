@@ -12,7 +12,6 @@ set(sources src/main.cpp src/cost.cpp src/vehicle.cpp)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
-
 include_directories(/usr/local/include)
 include_directories(/usr/local/opt/openssl/include)
 

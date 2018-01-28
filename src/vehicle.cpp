@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <iostream>
-#include "cost.h"
 #include "vehicle.h"
+#include "cost.h"
 #include <cmath>
 #include <map>
 #include <string>
@@ -9,7 +9,7 @@
 /**
  * Initializes Vehicle
  */
-using namespace Cost;
+// using namespace Cost;
 
 Vehicle::Vehicle() {}
 
@@ -50,7 +50,7 @@ vector<Vehicle> Vehicle::choose_next_state(vector<Vehicle> predictions)
         vector<Vehicle> trajectory = generate_trajectory(*it, predictions);
         if (trajectory.size() != 0)
         {
-            cost = Cost::calculate_cost(*this, predictions, trajectory);
+            cost = calculate_cost(*this, predictions, trajectory);
             costs.push_back(cost);
             final_trajectories.push_back(trajectory);
         }

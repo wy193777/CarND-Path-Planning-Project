@@ -31,7 +31,10 @@ float lane_speed(const vector<Vehicle> & predictions, int lane) {
     return -1.0;
 }
 
-map<string, float> get_helper_data(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions) {
+map<string, float> get_helper_data(
+    const Vehicle & vehicle, 
+    const vector<Vehicle> & trajectory, 
+    const vector<Vehicle> & predictions) {
     /*
     Generate helper data to use in cost functions:
     indended_lane: +/- 1 from the current lane if the ehicle is planning or executing a lane change.
@@ -61,7 +64,11 @@ map<string, float> get_helper_data(const Vehicle & vehicle, const vector<Vehicle
     return trajectory_data;
 }
 
-float goal_distance_cost(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions, map<string, float> & data) {
+float goal_distance_cost(
+    const Vehicle & vehicle, 
+    const vector<Vehicle> & trajectory, 
+    const vector<Vehicle> & predictions, 
+    map<string, float> & data) {
     /*
     Cost increases based on distance of intended lane (for planning a lane change) and final lane of trajectory.
     Cost of being out of goal lane also becomes larger as vehicle approaches goal distance. This function is
@@ -77,7 +84,11 @@ float goal_distance_cost(const Vehicle & vehicle, const vector<Vehicle> & trajec
     return cost;
 }
 
-float inefficiency_cost(const Vehicle & vehicle, const vector<Vehicle> & trajectory, vector<Vehicle> & predictions, map<string, float> & data) {
+float inefficiency_cost(
+    const Vehicle & vehicle, 
+    const vector<Vehicle> & trajectory, 
+    const vector<Vehicle> & predictions, 
+    map<string, float> & data) {
     /*
     Cost becomes higher for trajectories with intended lane and final lane that have traffic slower than vehicle's target speed. 
     You can use the lane_speed(const map<int, vector<Vehicle>> & predictions, int lane) function to determine the speed
@@ -101,7 +112,10 @@ float inefficiency_cost(const Vehicle & vehicle, const vector<Vehicle> & traject
 
 
 
-float calculate_cost(const Vehicle & vehicle, vector<Vehicle> & predictions, const vector<Vehicle> & trajectory) {
+float calculate_cost(
+    const Vehicle & vehicle, 
+    const vector<Vehicle> & predictions, 
+    const vector<Vehicle> & trajectory) {
     /*
     Sum weighted cost functions to get total cost for trajectory.
     */

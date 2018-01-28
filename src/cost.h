@@ -4,11 +4,14 @@
 
 using namespace std;
 
-namespace Cost {
-float calculate_cost(
+// namespace Cost {
+float lane_speed(const vector<Vehicle> &predictions, int lane);
+
+map<string, float> get_helper_data(
     const Vehicle &vehicle,
-    const vector<Vehicle> &predictions,
-    const vector<Vehicle> &trajectory);
+    const vector<Vehicle> &trajectory,
+    const vector<Vehicle> &predictions);
+
 
 float goal_distance_cost(
     const Vehicle &vehicle,
@@ -22,12 +25,11 @@ float inefficiency_cost(
     const vector<Vehicle> &predictions,
     map<string, float> &data);
 
-float lane_speed(const vector<Vehicle> &predictions, int lane);
-
-map<string, float> get_helper_data(
+float calculate_cost(
     const Vehicle &vehicle,
-    const vector<Vehicle> &trajectory,
-    const vector<Vehicle> &predictions);
-}
+    const vector<Vehicle> &predictions,
+    const vector<Vehicle> &trajectory);
+
+// }
 
 #endif
