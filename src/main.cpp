@@ -9,7 +9,9 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
+#include "vehicle.h"
 #include "spline.h"
+#include "cost.h"
 
 using namespace std;
 
@@ -90,8 +92,7 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
 	return closestWaypoint;
 }
 
-// Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
+tuple<double, double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
 {
 	int next_wp = NextWaypoint(x, y, theta, maps_x, maps_y);
 
@@ -135,7 +136,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
 	frenet_s += distance(0, 0, proj_x, proj_y);
 
-	return {frenet_s, frenet_d};
+	return make_tuple(frenet_s, frenet_d);
 }
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
@@ -163,6 +164,103 @@ tuple<double, double> getXY(double s, double d, const vector<double> &maps_s, co
 	double y = seg_y + d * sin(perp_heading);
 
 	return make_tuple(x, y);
+}
+
+int dToLaneNumber(double d)
+{
+	return ((int) d) / 4; 
+}
+
+int laneNumberToD(int lane)
+{
+	return (2 + 4 * lane);
+}
+/**
+ *  
+ */
+tuple<double, int> process_sensor_fusion(
+	vector<vector<double>> sensor_fusion, double car_s, 
+	double car_v, int car_lane, int future_steps)
+{
+	bool too_close = false;
+	int new_lane = 1;
+	double new_velocity = car_v;
+	for (int i = 0; i < sensor_fusion.size(); i++)
+	{
+		float d = sensor_fusion[i][6];
+		if (dToLaneNumber(d) == car_lane)
+		{
+			double vx = sensor_fusion[i][3];
+			double vy = sensor_fusion[i][4];
+			double check_speed = sqrt(vx * vx + vy * vy);
+			double check_car_s = sensor_fusion[i][5];
+			// where the car should be in the near future
+			check_car_s += ((double)future_steps * 0.02 * check_speed);
+
+			if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
+			{
+				// some logic
+				// ref_vel = check_speed; // reduce speed when close
+				too_close = true;
+				if (car_lane > 0)
+				{
+					new_lane = car_lane - 1;
+				}
+				else
+				{
+					new_lane = car_lane + 1;
+				}
+			}
+		}
+	}
+	if (too_close)
+	{
+		car_v -= 0.25; // about 5 meters per second^2
+	}
+	else if (car_v < 49.5)
+	{
+		car_v += 0.5;
+	}
+	new_velocity = car_v;
+	return make_tuple(new_velocity, new_lane);
+}
+
+Vehicle createVehicle(vector<double> sensor_data)
+{
+	int id = sensor_data[0];
+	double x_pos = sensor_data[1];
+	double y_pos = sensor_data[2];
+	double vx = sensor_data[3];
+	double vy = sensor_data[4];
+	double s = sensor_data[5];
+	float d = sensor_data[6];
+	double velocity = sqrt(vx * vx + vy * vy);
+	int lane = 0;
+	return Vehicle(id, dToLaneNumber(d), s, velocity, 0);
+}
+
+
+
+bool inSameLane(double other_d, double our_lane)
+{
+	return (other_d < (2 + 4 * our_lane + 2) && other_d > (2 + 4 * our_lane - 2));
+}
+
+float inefficiency_cost(int target_speed, int intended_lane, int final_lane, vector<int> lane_speeds)
+{
+	/*
+    Cost becomes higher for trajectories with intended lane and final lane that have traffic slower than target_speed.
+    */
+
+	float speed_intended = lane_speeds[intended_lane];
+	float speed_final = lane_speeds[final_lane];
+	float cost = (2.0 * target_speed - speed_intended - speed_final) / target_speed;
+	return cost;
+}
+
+double roadVelocity(double vx, double vy)
+{
+	return sqrt(vx * vx + vy * vy);
 }
 
 int main()
@@ -258,43 +356,11 @@ int main()
 
 		bool too_close = false;
 
-		for (int i = 0; i < sensor_fusion.size(); i++)
-		{
-			float d = sensor_fusion[i][6];
-			if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2))
-			{
-				double vx = sensor_fusion[i][3];
-				double vy = sensor_fusion[i][4];
-				double check_speed = sqrt(vx * vx + vy * vy);
-				double check_car_s = sensor_fusion[i][5];
-				// where the car should be in the near future
-				check_car_s += ((double)prev_size * 0.02 * check_speed);
-
-				if ((check_car_s > car_s) && ((check_car_s - car_s) < 30))
-				{
-					// some logic
-					// ref_vel = check_speed; // reduce speed when close
-					too_close = true;
-					if (lane > 0)
-					{
-						lane = lane - 1;
-					}
-					else
-					{
-						lane = lane + 1;
-					}
-				}
-			}
-		}
-
-		if (too_close)
-		{
-			ref_vel -= 0.25; // about 5 meters per second^2
-		}
-		else if (ref_vel < 49.5)
-		{
-			ref_vel += 0.5;
-		}
+		auto [new_speed, new_lane] = process_sensor_fusion(
+			sensor_fusion, car_s, ref_vel, lane, prev_size);
+		
+		ref_vel = new_speed;
+		lane = new_lane;
 
 		vector<double> ptsx;
 		vector<double> ptsy;

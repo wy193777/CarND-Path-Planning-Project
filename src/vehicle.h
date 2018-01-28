@@ -22,6 +22,8 @@ public:
 
   int L = 1;
 
+  int id;
+
   int preferred_buffer = 6; // impacts "keep lane" behavior.
 
   int lane;
@@ -48,37 +50,37 @@ public:
   * Constructor
   */
   Vehicle();
-  Vehicle(int lane, float s, float v, float a, string state="CS");
+  Vehicle(int id, int lane, float s, float v, float a, string state="CS");
   /**
   * Destructor
   */
   virtual ~Vehicle();
 
-  vector<Vehicle> choose_next_state(map<int, vector<Vehicle>> predictions);
+  vector<Vehicle> choose_next_state(vector<Vehicle> predictions);
 
   vector<string> successor_states();
 
-  vector<Vehicle> generate_trajectory(string state, map<int, vector<Vehicle>> predictions);
+  vector<Vehicle> generate_trajectory(string state, vector<Vehicle> predictions);
 
-  vector<float> get_kinematics(map<int, vector<Vehicle>> predictions, int lane);
+  vector<float> get_kinematics(vector<Vehicle> predictions, int lane);
 
   vector<Vehicle> constant_speed_trajectory();
 
-  vector<Vehicle> keep_lane_trajectory(map<int, vector<Vehicle>> predictions);
+  vector<Vehicle> keep_lane_trajectory(vector<Vehicle> predictions);
 
-  vector<Vehicle> lane_change_trajectory(string state, map<int, vector<Vehicle>> predictions);
+  vector<Vehicle> lane_change_trajectory(string state, vector<Vehicle> predictions);
 
-  vector<Vehicle> prep_lane_change_trajectory(string state, map<int, vector<Vehicle>> predictions);
+  vector<Vehicle> prep_lane_change_trajectory(string state, vector<Vehicle> predictions);
 
   void increment(double dt);
 
   double position_at(double t);
 
-  bool get_vehicle_behind(map<int, vector<Vehicle>> predictions, int lane, Vehicle & rVehicle);
+  bool get_vehicle_behind(vector<Vehicle> predictions, int lane, Vehicle & rVehicle);
 
-  bool get_vehicle_ahead(map<int, vector<Vehicle>> predictions, int lane, Vehicle & rVehicle);
+  bool get_vehicle_ahead(vector<Vehicle> predictions, int lane, Vehicle & rVehicle);
 
-  vector<Vehicle> generate_predictions(int horizon=4);
+  Vehicle generate_predictions(int future_steps, vector<double> sensor_data);
 
   void realize_next_state(vector<Vehicle> trajectory);
 
