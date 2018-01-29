@@ -11,7 +11,7 @@
  */
 // using namespace Cost;
 
-const double CHANGE_LANE_BEHIND_BUFFER = 6;
+const double CHANGE_LANE_BEHIND_BUFFER = 15;
 
 Vehicle::Vehicle() {}
 
@@ -87,13 +87,21 @@ vector<string> Vehicle::successor_states()
             states.push_back("PLCL");
             states.push_back("LCL");
         }
+        if (lane == 0) 
+        {
+            states.push_back("LCL2");
+        }
     }
     else if (state.compare("PLCR") == 0)
     {
         if (lane != 0)
         {
             states.push_back("PLCR");
-            states.push_back("LCR");
+            states.push_back("LCR"); 
+        }
+        if (lane == lanes_available - 1) 
+        {
+            states.push_back("LCR2");
         }
     }
     //If state is "LCL" or "LCR", then just return "KL"
@@ -114,7 +122,12 @@ vector<Vehicle> Vehicle::generate_trajectory(string state, vector<Vehicle> predi
     {
         trajectory = keep_lane_trajectory(predictions);
     }
-    else if (state.compare("LCL") == 0 || state.compare("LCR") == 0)
+    else if (
+        state.compare("LCL") == 0 || 
+        state.compare("LCR") == 0 || 
+        state.compare("LCL2") == 0 ||
+        state.compare("LCR2") == 0
+        )
     {
         trajectory = lane_change_trajectory(state, predictions);
     }
@@ -246,7 +259,10 @@ vector<Vehicle> Vehicle::lane_change_trajectory(string state, vector<Vehicle> pr
     //Check if acceleration lane change is possible (check if another vehicle occupies that spot).
     for (Vehicle next_lane_vehicle : predictions)
     {
-        if (abs(next_lane_vehicle.s - this->s) < CHANGE_LANE_BEHIND_BUFFER && next_lane_vehicle.lane == new_lane)
+        if (
+            next_lane_vehicle.s - this->s > 0 &&
+            abs(next_lane_vehicle.s - this->s) < CHANGE_LANE_BEHIND_BUFFER && 
+            next_lane_vehicle.lane == new_lane)
         {
             //If lane change is not possible, return empty trajectory.
             return trajectory;

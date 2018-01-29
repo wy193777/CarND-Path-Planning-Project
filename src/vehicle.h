@@ -11,7 +11,14 @@ using namespace std;
 class Vehicle {
 public:
 
-  map<string, int> lane_direction = {{"PLCL", 1}, {"LCL", 1}, {"LCR", -1}, {"PLCR", -1}};
+  map<string, int> lane_direction = {
+    {"PLCL", 1}, 
+    {"LCL", 1}, 
+    {"LCR", -1}, 
+    {"PLCR", -1},
+    {"LCL2", 2},
+    {"LCR2", 2}
+  };
 
   int L = 1;
 
