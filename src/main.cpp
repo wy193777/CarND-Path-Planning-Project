@@ -203,15 +203,16 @@ map<int, Vehicle> createVehicles(vector<vector<double>> sensor_fusion)
  *  
  */
 tuple<double, int> process_sensor_fusion(
-	vector<vector<double>> sensor_fusion,
+	vector<vector<double>> & sensor_fusion,
 	map<int, Vehicle> & surroundings,
-	Vehicle self,
+	Vehicle & self,
 	double car_s, 
 	double car_v, 
 	int car_lane, 
 	int future_steps)
 {
 	vector<Vehicle> predictions;
+	self.update(car_lane, car_s, car_v, future_steps);
 	for (auto data : sensor_fusion) {
 		Vehicle prediction;
 		if (surroundings.find(data[0]) == surroundings.end()) {
@@ -227,7 +228,7 @@ tuple<double, int> process_sensor_fusion(
 	vector<Vehicle> trajectory = self.choose_next_state(predictions);
 	double new_velocity = trajectory[1].velocity;
 	double new_lane = trajectory[1].lane; 
-	self.update(car_lane, car_s, car_v, trajectory[1].state, future_steps);
+	self.state = trajectory[1].state;
 	return make_tuple(new_velocity, new_lane);
 }
 
@@ -296,7 +297,7 @@ int main()
 	double ref_vel = 0;
 	map<int, Vehicle> surroundings;
 	Vehicle self = Vehicle(-1, lane, 0, 0, 0, "KL");
-	const double max_acceleration = 0.5; // interval for each run is around 0.05s
+	const double max_acceleration = 0.7; // interval for each run is around 0.1s
 	self.configure(49.5, 3, 7000, 1, max_acceleration);
 	
 	h.onMessage([

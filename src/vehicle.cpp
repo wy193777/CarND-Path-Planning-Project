@@ -350,13 +350,12 @@ void Vehicle::realize_next_state(vector<Vehicle> trajectory)
     this->acceleration = next_state.acceleration;
 }
 
-void Vehicle::update(int lane, float s, float velocity, string state, int future_steps)
+void Vehicle::update(int lane, float s, float velocity, int future_steps)
 {
     this->lane = lane;
     this->s = s;
     this->acceleration = (velocity - this->velocity) / (future_steps * 0.02);
     this->velocity = velocity;
-    this-> state = state;
 }
 
 void Vehicle::configure(
