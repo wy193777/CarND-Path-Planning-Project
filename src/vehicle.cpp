@@ -21,7 +21,7 @@ Vehicle::Vehicle(int id, int lane, float s, float velocity, float acceleration, 
     this->velocity = velocity;
     this->acceleration = acceleration;
     this->state = state;
-    max_acceleration = 10;
+    max_acceleration = 10; 
 }
 
 Vehicle::~Vehicle() {}
@@ -157,7 +157,6 @@ vector<float> Vehicle::get_kinematics(vector<Vehicle> predictions, int lane)
     new_position = this->s + new_velocity + new_accel / 2.0;
     // new_velocity = abs(new_velocity);
     new_position = this->s + new_velocity;
-    cout<<"new v: "<< new_velocity<<endl;
     return {new_position, new_velocity, new_accel};
 }
 
@@ -166,7 +165,6 @@ vector<Vehicle> Vehicle::constant_speed_trajectory()
     /*
     Generate acceleration constant speed trajectory.
     */
-    printf("constant_speed_trajectory\n");
     float next_pos = position_at(1);
     vector<Vehicle> trajectory = {
         Vehicle(this->id, this->lane, this->s, this->velocity, this->acceleration, this->state),
@@ -180,7 +178,6 @@ vector<Vehicle> Vehicle::keep_lane_trajectory(vector<Vehicle> predictions)
     /*
     Generate acceleration keep lane trajectory.
     */
-    printf("keep_lane_trajectory\n");
     vector<Vehicle> trajectory = {
         Vehicle(this->id, lane, this->s, this->velocity, this->acceleration, state)};
     vector<float> kinematics = get_kinematics(predictions, this->lane);
@@ -196,7 +193,6 @@ vector<Vehicle> Vehicle::prep_lane_change_trajectory(string state, vector<Vehicl
     /*
     Generate acceleration trajectory preparing for acceleration lane change.
     */
-    printf("prep_lane_change_trajectory\n");
     float new_s;
     float new_v;
     float new_a;
@@ -240,7 +236,6 @@ vector<Vehicle> Vehicle::lane_change_trajectory(string state, vector<Vehicle> pr
     /*
     Generate acceleration lane change trajectory.
     */
-    printf("lane_change_trajectory\n");
     int new_lane = this->lane + lane_direction[state];
     vector<Vehicle> trajectory;
     Vehicle next_lane_vehicle;
@@ -321,11 +316,18 @@ Vehicle Vehicle::generate_predictions(int future_steps, vector<double> sensor_da
     double vy = sensor_data[4];
     double curr_velocity = sqrt(vx * vx + vy * vy);
     double curr_s = sensor_data[5];
-    double future_time = future_steps * 0.02;
-    double new_acc = (this->velocity - curr_velocity) / future_time;
-    double new_s = curr_s + future_time * curr_velocity + 0.5 * new_acc * future_time * future_time;
-    double new_velocity = curr_velocity + new_acc * future_time;
-    return Vehicle(this->id, this->lane, new_s, new_velocity, new_acc, this-> state);
+
+    double future_time = (double)future_steps * 0.02;
+    // double new_acc = (curr_velocity - this->velocity) / future_time;
+    // double new_s = curr_s + future_time * curr_velocity + 0.5 * new_acc * future_time * future_time;
+    // double new_velocity = curr_velocity + new_acc * future_time;
+
+    double new_s = curr_s + future_time * curr_velocity;
+    double new_velocity = curr_velocity;
+
+    // cout << "generate_predictions Velocity: " << this->velocity << endl;     
+
+    return Vehicle(this->id, this->lane, new_s, new_velocity, 0, this-> state);
 }
 
 void Vehicle::realize_next_state(vector<Vehicle> trajectory)

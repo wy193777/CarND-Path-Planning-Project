@@ -7,8 +7,8 @@
 
 
 //TODO: change weights for cost functions.
-const float REACH_GOAL = 0;
-const float EFFICIENCY = 0;
+const float REACH_GOAL = 1;
+const float EFFICIENCY = 1;
 
 /*
 Here we have provided two possible suggestions for cost functions, but feel free to use your own!
@@ -22,7 +22,6 @@ float lane_speed(const vector<Vehicle> & predictions, int lane) {
     All non ego vehicles in a lane have the same speed, so to get the speed limit for a lane,
     we can just find one vehicle in that lane.
     */
-
     for (auto vehicle : predictions) {
         if (vehicle.lane == lane) {
             return vehicle.velocity;
@@ -95,6 +94,8 @@ float inefficiency_cost(
     for a lane. This function is very similar to what you have already implemented in the "Implement a Second Cost Function in C++" quiz.
     */
     float proposed_speed_intended = lane_speed(predictions, data["intended_lane"]);
+    // cout << "proposed_speed_intended: " << proposed_speed_intended << endl;
+    
     //If no vehicle is in the proposed lane, we can travel at target speed.
     if (proposed_speed_intended < 0) {
         proposed_speed_intended = vehicle.target_speed;
@@ -126,7 +127,6 @@ float calculate_cost(
     
     float goal_cost = REACH_GOAL * goal_distance_cost(vehicle, trajectory, predictions, trajectory_data);
     float efficiency_cost = EFFICIENCY * inefficiency_cost(vehicle, trajectory, predictions, trajectory_data);
-
     return goal_cost + efficiency_cost;
 
 }
