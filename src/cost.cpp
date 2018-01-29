@@ -8,8 +8,8 @@
 
 //TODO: change weights for cost functions.
 const float REACH_GOAL = 1;
-const float EFFICIENCY = 100;
-
+const float EFFICIENCY = 1;
+const double BUFFER = 40.0;
 /*
 Here we have provided two possible suggestions for cost functions, but feel free to use your own!
 The weighted cost over all cost functions is computed in calculate_cost. The data from get_helper_data
@@ -17,13 +17,13 @@ will be very useful in your implementation of the cost functions below. Please s
 for details on how the helper data is computed. 
 */
 
-float lane_speed(const vector<Vehicle> & predictions, int lane) {
+float lane_speed(const Vehicle & self, const vector<Vehicle> & predictions, int lane) {
     /*
     All non ego vehicles in a lane have the same speed, so to get the speed limit for a lane,
     we can just find one vehicle in that lane.
     */
     for (auto vehicle : predictions) {
-        if (vehicle.lane == lane) {
+        if (vehicle.lane == lane && self.s < vehicle.s && (vehicle.s - self.s) < BUFFER) {
             return vehicle.velocity;
         }
     }
@@ -93,15 +93,15 @@ float inefficiency_cost(
     You can use the lane_speed(const map<int, vector<Vehicle>> & predictions, int lane) function to determine the speed
     for a lane. This function is very similar to what you have already implemented in the "Implement a Second Cost Function in C++" quiz.
     */
-    float proposed_speed_intended = lane_speed(predictions, data["intended_lane"]);
-    // cout << "proposed_speed_intended: " << proposed_speed_intended << endl;
+    float proposed_speed_intended = lane_speed(vehicle, predictions, data["intended_lane"]);
+    cout << "proposed_speed_intended: " << proposed_speed_intended << endl;
     
     //If no vehicle is in the proposed lane, we can travel at target speed.
     if (proposed_speed_intended < 0) {
         proposed_speed_intended = vehicle.target_speed;
     }
 
-    float proposed_speed_final = lane_speed(predictions, data["final_lane"]);
+    float proposed_speed_final = lane_speed(vehicle, predictions, data["final_lane"]);
     if (proposed_speed_final < 0) {
         proposed_speed_final = vehicle.target_speed;
     }

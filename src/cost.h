@@ -5,7 +5,10 @@
 using namespace std;
 
 // namespace Cost {
-float lane_speed(const vector<Vehicle> &predictions, int lane);
+float lane_speed(
+    const Vehicle & self, 
+    const vector<Vehicle> & predictions, 
+    int lane);
 
 map<string, float> get_helper_data(
     const Vehicle &vehicle,

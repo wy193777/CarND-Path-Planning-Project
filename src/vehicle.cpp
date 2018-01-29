@@ -53,11 +53,13 @@ vector<Vehicle> Vehicle::choose_next_state(vector<Vehicle> predictions)
             cost = calculate_cost(*this, predictions, trajectory);
             costs.push_back(cost);
             final_trajectories.push_back(trajectory);
+            cout << "states and cost: " << state << ", " << cost << endl;
         }
     }
 
     vector<float>::iterator best_cost = min_element(begin(costs), end(costs));
     int best_idx = distance(begin(costs), best_cost);
+    cout << "final state: " << states[best_idx] << endl; 
     return final_trajectories[best_idx];
 }
 
@@ -137,16 +139,11 @@ vector<float> Vehicle::get_kinematics(vector<Vehicle> predictions, int lane)
 
     if (get_vehicle_ahead(predictions, lane, vehicle_ahead))
     {
+        double delta_velocity = 
+            (this->preferred_buffer - (vehicle_ahead.s - this->s)) * 0.1;
 
-        if (get_vehicle_behind(predictions, lane, vehicle_behind))
-        {
-            new_velocity = vehicle_ahead.velocity; //must travel at the speed of traffic, regardless of preferred buffer
-        }
-        else
-        {
-            float max_velocity_in_front = (vehicle_ahead.s - this->s - this->preferred_buffer) + vehicle_ahead.velocity - 0.5 * (this->acceleration);
-            new_velocity = min(min(max_velocity_in_front, max_velocity_accel_limit), this->target_speed);
-        }
+        new_velocity = this->velocity - delta_velocity;
+        new_velocity = max(vehicle_ahead.velocity, new_velocity);
     }
     else
     {
@@ -199,7 +196,10 @@ vector<Vehicle> Vehicle::prep_lane_change_trajectory(string state, vector<Vehicl
     Vehicle vehicle_behind;
     int new_lane = this->lane + lane_direction[state];
     vector<Vehicle> trajectory = {
-        Vehicle(this->id, this->lane, this->s, this->velocity, this->acceleration, this->state)};
+        Vehicle(
+            this->id, this->lane, this->s, this->velocity, this->acceleration, this->state
+        )
+    };
     vector<float> curr_lane_new_kinematics = get_kinematics(predictions, this->lane);
 
     if (get_vehicle_behind(predictions, this->lane, vehicle_behind))
@@ -275,7 +275,11 @@ bool Vehicle::get_vehicle_behind(vector<Vehicle> predictions, int lane, Vehicle 
     bool found_vehicle = false;
     for (Vehicle vehicle : predictions) 
     {
-        if (vehicle.lane == this->lane && vehicle.s < this->s && vehicle.s > max_s)
+        if (
+            vehicle.lane == this->lane && 
+            vehicle.s < this->s && 
+            vehicle.s > max_s &&
+            this->s - vehicle.s < 30)
         {
             max_s = vehicle.s;
             rVehicle = vehicle;
@@ -288,15 +292,20 @@ bool Vehicle::get_vehicle_behind(vector<Vehicle> predictions, int lane, Vehicle 
 bool Vehicle::get_vehicle_ahead(vector<Vehicle> predictions, int lane, Vehicle &rVehicle)
 {
     /*
-    Returns acceleration true if acceleration vehicle is found ahead of the current vehicle, false otherwise. The passed reference
-    rVehicle is updated if acceleration vehicle is found.
+    Returns acceleration true if acceleration vehicle is found ahead of the current vehicle, 
+    false otherwise. 
+    The passed reference rVehicle is updated if acceleration vehicle is found.
     */
     double min_s = this->goal_s;
     bool found_vehicle = false;
     Vehicle temp_vehicle;
     for (Vehicle vehicle : predictions) 
     {
-        if (vehicle.lane == this->lane && vehicle.s > this->s && vehicle.s < min_s)
+        if (
+            vehicle.lane == this->lane && 
+            vehicle.s > this->s && 
+            vehicle.s < min_s && 
+            (vehicle.s - this->s) < preferred_buffer)
         {
             min_s = vehicle.s;
             rVehicle = vehicle;
@@ -341,12 +350,13 @@ void Vehicle::realize_next_state(vector<Vehicle> trajectory)
     this->acceleration = next_state.acceleration;
 }
 
-void Vehicle::update(int lane, float s, float velocity, int future_steps)
+void Vehicle::update(int lane, float s, float velocity, string state, int future_steps)
 {
     this->lane = lane;
     this->s = s;
     this->acceleration = (velocity - this->velocity) / (future_steps * 0.02);
     this->velocity = velocity;
+    this-> state = state;
 }
 
 void Vehicle::configure(

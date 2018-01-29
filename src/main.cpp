@@ -211,7 +211,6 @@ tuple<double, int> process_sensor_fusion(
 	int car_lane, 
 	int future_steps)
 {
-	self.update(car_lane, car_s, car_v, future_steps);
 	vector<Vehicle> predictions;
 	for (auto data : sensor_fusion) {
 		Vehicle prediction;
@@ -228,6 +227,7 @@ tuple<double, int> process_sensor_fusion(
 	vector<Vehicle> trajectory = self.choose_next_state(predictions);
 	double new_velocity = trajectory[1].velocity;
 	double new_lane = trajectory[1].lane; 
+	self.update(car_lane, car_s, car_v, trajectory[1].state, future_steps);
 	return make_tuple(new_velocity, new_lane);
 }
 

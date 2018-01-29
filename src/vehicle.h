@@ -24,7 +24,7 @@ public:
 
   int id;
 
-  int preferred_buffer = 6; // impacts "keep lane" behavior.
+  int preferred_buffer = 30; // impacts "keep lane" behavior.
 
   int lane;
 
@@ -84,7 +84,7 @@ public:
 
   void realize_next_state(vector<Vehicle> trajectory);
 
-  void update(int lane, float s, float velocity, int future_steps);
+  void update(int lane, float s, float velocity, string state, int future_steps);
 
   void configure(
     double target_speed,
