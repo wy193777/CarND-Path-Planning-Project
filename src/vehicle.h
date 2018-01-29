@@ -13,13 +13,6 @@ public:
 
   map<string, int> lane_direction = {{"PLCL", 1}, {"LCL", 1}, {"LCR", -1}, {"PLCR", -1}};
 
-  struct collider{
-
-    bool collision ; // is there a collision?
-    int  time; // time collision happens
-
-  };
-
   int L = 1;
 
   int id;

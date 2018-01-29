@@ -7,7 +7,7 @@
 
 
 //TODO: change weights for cost functions.
-const float REACH_GOAL = 1;
+const float REACH_GOAL = 3;
 const float EFFICIENCY = 1;
 const double BUFFER = 40.0;
 /*
@@ -94,7 +94,6 @@ float inefficiency_cost(
     for a lane. This function is very similar to what you have already implemented in the "Implement a Second Cost Function in C++" quiz.
     */
     float proposed_speed_intended = lane_speed(vehicle, predictions, data["intended_lane"]);
-    cout << "proposed_speed_intended: " << proposed_speed_intended << endl;
     
     //If no vehicle is in the proposed lane, we can travel at target speed.
     if (proposed_speed_intended < 0) {

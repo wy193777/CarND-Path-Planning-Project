@@ -254,6 +254,9 @@ double roadVelocity(double vx, double vy)
 	return sqrt(vx * vx + vy * vy);
 }
 
+const double max_acceleration = 0.7; // interval for each run is around 0.1s
+const double POINT_INTERVAL = 30; // trajectory point interval
+
 int main()
 {
 	uWS::Hub h;
@@ -297,7 +300,7 @@ int main()
 	double ref_vel = 0;
 	map<int, Vehicle> surroundings;
 	Vehicle self = Vehicle(-1, lane, 0, 0, 0, "KL");
-	const double max_acceleration = 0.7; // interval for each run is around 0.1s
+	
 	self.configure(49.5, 3, 7000, 1, max_acceleration);
 	
 	h.onMessage([
@@ -410,7 +413,7 @@ int main()
 		vector<tuple<double, double>> next_wps;
 		for (int i = 0; i < 3; i++)
 		{
-			next_wps.push_back(getXY(car_s + (i + 1) * 30, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_y));
+			next_wps.push_back(getXY(car_s + (i + 1) * POINT_INTERVAL, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_y));
 		}
 
 		double next_xxx[] = {get<0>(next_wps[0]), get<0>(next_wps[1]), get<0>(next_wps[2])};

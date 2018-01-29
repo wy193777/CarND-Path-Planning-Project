@@ -11,6 +11,8 @@
  */
 // using namespace Cost;
 
+const double CHANGE_LANE_BEHIND_BUFFER = 6;
+
 Vehicle::Vehicle() {}
 
 Vehicle::Vehicle(int id, int lane, float s, float velocity, float acceleration, string state)
@@ -131,6 +133,7 @@ vector<float> Vehicle::get_kinematics(vector<Vehicle> predictions, int lane)
     given other vehicle positions and accel/velocity constraints.
     */
     float max_velocity_accel_limit = this->max_acceleration + this->velocity;
+    float max_velocity_accel_limit_neg = this->max_acceleration - this->velocity;
     float new_position;
     float new_velocity;
     float new_accel;
@@ -143,7 +146,8 @@ vector<float> Vehicle::get_kinematics(vector<Vehicle> predictions, int lane)
             (this->preferred_buffer - (vehicle_ahead.s - this->s)) * 0.1;
 
         new_velocity = this->velocity - delta_velocity;
-        new_velocity = max(vehicle_ahead.velocity, new_velocity);
+        new_velocity = max(
+            max_velocity_accel_limit_neg, max(vehicle_ahead.velocity, new_velocity));
     }
     else
     {
@@ -242,16 +246,20 @@ vector<Vehicle> Vehicle::lane_change_trajectory(string state, vector<Vehicle> pr
     //Check if acceleration lane change is possible (check if another vehicle occupies that spot).
     for (Vehicle next_lane_vehicle : predictions)
     {
-        if (next_lane_vehicle.s == this->s && next_lane_vehicle.lane == new_lane)
+        if (abs(next_lane_vehicle.s - this->s) < CHANGE_LANE_BEHIND_BUFFER && next_lane_vehicle.lane == new_lane)
         {
             //If lane change is not possible, return empty trajectory.
             return trajectory;
         }
     }
     trajectory.push_back(
-        Vehicle(this->id, this->lane, this->s, this->velocity, this->acceleration, this->state));
+        Vehicle(
+            this->id, this->lane, this->s, this->velocity, this->acceleration, this->state)
+    );
     vector<float> kinematics = get_kinematics(predictions, new_lane);
-    trajectory.push_back(Vehicle(this->id, new_lane, kinematics[0], kinematics[1], kinematics[2], state));
+    trajectory.push_back(
+        Vehicle(
+            this->id, new_lane, kinematics[0], kinematics[1], kinematics[2], state));
     return trajectory;
 }
 
