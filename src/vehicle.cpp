@@ -11,7 +11,7 @@
  */
 // using namespace Cost;
 
-const double CHANGE_LANE_BEHIND_BUFFER = 15;
+const double CHANGE_LANE_BEHIND_BUFFER = 10;
 
 Vehicle::Vehicle() {}
 
@@ -55,13 +55,15 @@ vector<Vehicle> Vehicle::choose_next_state(vector<Vehicle> predictions)
             cost = calculate_cost(*this, predictions, trajectory);
             costs.push_back(cost);
             final_trajectories.push_back(trajectory);
-            cout << "states and cost: " << state << ", " << cost << endl;
+            // cout << "states and cost: " << state << ", " << cost << endl;
         }
     }
 
     vector<float>::iterator best_cost = min_element(begin(costs), end(costs));
     int best_idx = distance(begin(costs), best_cost);
-    cout << "final state: " << states[best_idx] << endl; 
+    if (state != "KL") {
+        cout << "final state: " << states[best_idx] << endl; 
+    }
     return final_trajectories[best_idx];
 }
 
@@ -86,10 +88,10 @@ vector<string> Vehicle::successor_states()
         {
             states.push_back("PLCL");
             states.push_back("LCL");
-        }
-        if (lane == 0) 
-        {
-            states.push_back("LCL2");
+            if (lane == 0) 
+            {
+                states.push_back("LCL2");
+            }
         }
     }
     else if (state.compare("PLCR") == 0)
@@ -97,11 +99,11 @@ vector<string> Vehicle::successor_states()
         if (lane != 0)
         {
             states.push_back("PLCR");
-            states.push_back("LCR"); 
-        }
-        if (lane == lanes_available - 1) 
-        {
-            states.push_back("LCR2");
+            states.push_back("LCR");
+            if (lane == lanes_available - 1) 
+            {
+                states.push_back("LCR2");
+            }
         }
     }
     //If state is "LCL" or "LCR", then just return "KL"
@@ -248,6 +250,21 @@ vector<Vehicle> Vehicle::prep_lane_change_trajectory(string state, vector<Vehicl
     return trajectory;
 }
 
+bool Vehicle::lane_change_not_possible(string state, Vehicle prediction, int new_lane)
+{
+    bool close = (abs(prediction.s - this->s) < CHANGE_LANE_BEHIND_BUFFER);
+    if (close && prediction.lane == new_lane) {
+        return true;
+    }
+
+    bool two_lanes = (state.find("2") != string::npos);
+    if (close && two_lanes && prediction.lane != this->lane) {
+        return true;
+    }
+
+    return false;
+}
+
 vector<Vehicle> Vehicle::lane_change_trajectory(string state, vector<Vehicle> predictions)
 {
     /*
@@ -259,10 +276,7 @@ vector<Vehicle> Vehicle::lane_change_trajectory(string state, vector<Vehicle> pr
     //Check if acceleration lane change is possible (check if another vehicle occupies that spot).
     for (Vehicle next_lane_vehicle : predictions)
     {
-        if (
-            next_lane_vehicle.s - this->s > 0 &&
-            abs(next_lane_vehicle.s - this->s) < CHANGE_LANE_BEHIND_BUFFER && 
-            next_lane_vehicle.lane == new_lane)
+        if (lane_change_not_possible(state, next_lane_vehicle, new_lane))
         {
             //If lane change is not possible, return empty trajectory.
             return trajectory;

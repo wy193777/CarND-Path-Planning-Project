@@ -13,18 +13,20 @@ public:
 
   map<string, int> lane_direction = {
     {"PLCL", 1}, 
+    {"PLCR", -1},
+
     {"LCL", 1}, 
     {"LCR", -1}, 
-    {"PLCR", -1},
+  
     {"LCL2", 2},
-    {"LCR2", 2}
+    {"LCR2", -2}
   };
 
   int L = 1;
 
   int id;
 
-  int preferred_buffer = 30; // impacts "keep lane" behavior.
+  int preferred_buffer = 20; // impacts "keep lane" behavior.
 
   int lane;
 
@@ -75,6 +77,8 @@ public:
   void increment(double dt);
 
   double position_at(double t);
+
+  bool lane_change_not_possible(string state, Vehicle prediction, int new_lane);
 
   bool get_vehicle_behind(vector<Vehicle> predictions, int lane, Vehicle & rVehicle);
 
