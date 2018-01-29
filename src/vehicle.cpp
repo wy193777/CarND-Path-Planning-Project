@@ -316,7 +316,7 @@ Vehicle Vehicle::generate_predictions(int future_steps, vector<double> sensor_da
     double vy = sensor_data[4];
     double curr_velocity = sqrt(vx * vx + vy * vy);
     double curr_s = sensor_data[5];
-
+    double curr_d = sensor_data[6];
     double future_time = (double)future_steps * 0.02;
     // double new_acc = (curr_velocity - this->velocity) / future_time;
     // double new_s = curr_s + future_time * curr_velocity + 0.5 * new_acc * future_time * future_time;
@@ -325,9 +325,7 @@ Vehicle Vehicle::generate_predictions(int future_steps, vector<double> sensor_da
     double new_s = curr_s + future_time * curr_velocity;
     double new_velocity = curr_velocity;
 
-    // cout << "generate_predictions Velocity: " << this->velocity << endl;     
-
-    return Vehicle(this->id, this->lane, new_s, new_velocity, 0, this-> state);
+    return Vehicle(this->id, ((int) curr_d) / 4, new_s, new_velocity, 0, this-> state);
 }
 
 void Vehicle::realize_next_state(vector<Vehicle> trajectory)

@@ -163,7 +163,7 @@ tuple<double, double> getXY(double s, double d, const vector<double> &maps_s, co
 	double x = seg_x + d * cos(perp_heading);
 	double y = seg_y + d * sin(perp_heading);
 
-	return make_tuple(x, y);
+	return make_tuple(x, y);\
 }
 
 int dToLaneNumber(double d)
@@ -187,7 +187,6 @@ Vehicle createVehicle(vector<double> sensor_data)
 	float d = sensor_data[6];
 	double velocity = sqrt(vx * vx + vy * vy);
 	int lane = 0;
-	cout << "passed lane number: " << dToLaneNumber(d) << endl;
 	return Vehicle(id, dToLaneNumber(d), s, velocity, 0);
 }
 
