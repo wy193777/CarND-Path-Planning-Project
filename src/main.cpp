@@ -366,15 +366,16 @@ int main()
 			surroundings = createVehicles(sensor_fusion);
 		}
 
-		auto [new_speed, new_lane] = process_sensor_fusion(
+		auto result = process_sensor_fusion(
 			sensor_fusion, 
 			surroundings, 
 			self, 
 			car_s, ref_vel, lane, prev_size);
 		
+		auto new_speed = get<0>(result); 
+		auto new_lane = get<1>(result);
 		ref_vel = new_speed;
 		lane = new_lane;
-
 		vector<double> ptsx;
 		vector<double> ptsy;
 
